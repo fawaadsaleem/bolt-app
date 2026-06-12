@@ -13,6 +13,7 @@ import {
 import { getStory, STORY_COUNT } from '../data/stories';
 import SceneStage from './SceneStage';
 import { useFavorites } from '../useFavorites';
+import { useChildName } from '../useChildName';
 
 // Pick the gentlest-sounding English voice available on the device.
 function pickVoice(): SpeechSynthesisVoice | null {
@@ -37,6 +38,20 @@ export default function StoryPlayer() {
   const [autoPlay, setAutoPlay] = useState(false);
   const [finished, setFinished] = useState(false);
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { name: rawChildName } = useChildName();
+  const childName = rawChildName.trim();
+
+  // Weave the listening child into the opening and closing of every story.
+  const personalize = useCallback(
+    (text: string, idx: number) => {
+      if (!childName || !story) return text;
+      if (idx === 0) return `Snuggle in, ${childName}. ${text}`;
+      if (idx === story.scenes.length - 1)
+        return `${text} And goodnight to you too, ${childName}.`;
+      return text;
+    },
+    [childName, story]
+  );
 
   const autoRef = useRef(autoPlay);
   autoRef.current = autoPlay;
@@ -74,7 +89,7 @@ export default function StoryPlayer() {
   useEffect(() => {
     if (!story || finished) return;
     stopAll();
-    const text = story.scenes[scene].text;
+    const text = personalize(story.scenes[scene].text, scene);
 
     const scheduleAdvance = (ms: number) => {
       timerRef.current = window.setTimeout(() => {
@@ -115,7 +130,7 @@ export default function StoryPlayer() {
     }
 
     return stopAll;
-  }, [story, scene, soundOn, autoPlay, finished, speechSupported, stopAll, goTo]);
+  }, [story, scene, soundOn, autoPlay, finished, speechSupported, stopAll, goTo, personalize]);
 
   useEffect(() => stopAll, [stopAll]);
 
@@ -178,7 +193,9 @@ export default function StoryPlayer() {
             <span className="text-2xl">{story.hero.emoji}</span>{' '}
             {story.moral}
           </p>
-          <p className="text-xl text-purple-300">Sweet dreams! 💤</p>
+          <p className="text-xl text-purple-300">
+            Sweet dreams{childName ? `, ${childName}` : ''}! 💤
+          </p>
           <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
             <button
               onClick={() => {
@@ -212,7 +229,7 @@ export default function StoryPlayer() {
             className="anim-text-in mt-4 flex-1 rounded-3xl bg-white/5 p-5 ring-1 ring-white/10 sm:p-6"
           >
             <p className="text-lg leading-relaxed text-purple-50 sm:text-2xl sm:leading-relaxed">
-              {current.text}
+              {personalize(current.text, scene)}
             </p>
           </div>
 

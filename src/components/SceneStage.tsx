@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
 import type { Story } from '../data/stories';
 import type { Mood } from '../data/plots';
 
@@ -48,18 +49,58 @@ const MOOD_EFFECT: Record<Mood, string | null> = {
   brave: '⭐',
 };
 
+// One-shot sparkle burst shown when a character is tapped.
+function Burst() {
+  const parts = useMemo(
+    () =>
+      Array.from({ length: 6 }, () => ({
+        bx: (Math.random() - 0.5) * 130,
+        by: -30 - Math.random() * 90,
+        delay: Math.random() * 0.12,
+      })),
+    []
+  );
+  return (
+    <>
+      {parts.map((p, i) => (
+        <span
+          key={i}
+          className="burst-item left-1/2 top-1/3 text-2xl"
+          style={
+            {
+              '--bx': `${p.bx}px`,
+              '--by': `${p.by}px`,
+              animationDelay: `${p.delay}s`,
+            } as CSSProperties
+          }
+        >
+          ✨
+        </span>
+      ))}
+    </>
+  );
+}
+
 export default function SceneStage({ story, sceneIndex }: Props) {
   const scene = story.scenes[sceneIndex];
   const { setting, hero, friend } = story;
   const showFriend = scene.text.includes(friend.name);
 
-  const { stars, drifters, effects } = useMemo(() => {
+  // Tap-to-react characters + hidden star hunt.
+  const [pop, setPop] = useState<{ who: 'hero' | 'friend'; key: number } | null>(null);
+  const [found, setFound] = useState<number[]>([]);
+  useEffect(() => {
+    setPop(null);
+    setFound([]);
+  }, [story.id, sceneIndex]);
+
+  const { stars, drifters, effects, hidden } = useMemo(() => {
     const rnd = seeded(story.id * 1000 + sceneIndex * 17 + 3);
     const stars: Sprite[] = [];
     const starCount = setting.sky === 'space' ? 26 : 18;
     for (let i = 0; i < starCount; i++) {
       stars.push({
-        emoji: rnd() > 0.85 ? '🌟' : '✦',
+        emoji: rnd() > 0.85 ? '✧' : '✦',
         left: rnd() * 96,
         top: rnd() * 55,
         size: 0.4 + rnd() * 0.6,
@@ -92,7 +133,18 @@ export default function SceneStage({ story, sceneIndex }: Props) {
         });
       }
     }
-    return { stars, drifters, effects };
+    const hidden: Sprite[] = [];
+    for (let i = 0; i < 3; i++) {
+      hidden.push({
+        emoji: '⭐',
+        left: 6 + rnd() * 84,
+        top: 8 + rnd() * 55,
+        size: 1.05 + rnd() * 0.4,
+        delay: rnd() * 2,
+        duration: 3 + rnd() * 2,
+      });
+    }
+    return { stars, drifters, effects, hidden };
   }, [story.id, sceneIndex, setting, scene.mood]);
 
   const isLast = sceneIndex === story.scenes.length - 1;
@@ -102,13 +154,16 @@ export default function SceneStage({ story, sceneIndex }: Props) {
       key={`${story.id}-${sceneIndex}`}
       className={`anim-scene-in relative w-full overflow-hidden rounded-3xl bg-gradient-to-b ${setting.gradient} shadow-2xl shadow-purple-950/50 ring-1 ring-white/10`}
       style={{ height: 'min(46vh, 420px)' }}
-      aria-hidden="true"
     >
+      {/* hidden-star counter */}
+      <div className="absolute left-3 top-3 z-20 rounded-full bg-black/30 px-3 py-1 text-sm font-bold text-amber-200 backdrop-blur-sm">
+        {found.length === 3 ? '🌟 You found all the stars!' : `⭐ ${found.length}/3`}
+      </div>
       {/* stars */}
       {stars.map((s, i) => (
         <span
           key={`star-${i}`}
-          className="anim-twinkle absolute select-none"
+          className="anim-twinkle pointer-events-none absolute select-none"
           style={{
             left: `${s.left}%`,
             top: `${s.top}%`,
@@ -146,7 +201,7 @@ export default function SceneStage({ story, sceneIndex }: Props) {
 
       {/* moon */}
       <span
-        className="anim-glow absolute right-[8%] top-[8%] select-none text-5xl sm:text-6xl"
+        className="anim-glow pointer-events-none absolute right-[8%] top-[8%] select-none text-5xl sm:text-6xl"
       >
         {setting.sky === 'space' ? '🪐' : setting.sky === 'underwater' ? '🫧' : '🌙'}
       </span>
@@ -155,7 +210,7 @@ export default function SceneStage({ story, sceneIndex }: Props) {
       {drifters.map((d, i) => (
         <span
           key={`drift-${i}`}
-          className="drift-item select-none opacity-80"
+          className="drift-item pointer-events-none select-none opacity-80"
           style={{
             top: `${d.top}%`,
             fontSize: `${d.size}rem`,
@@ -167,11 +222,48 @@ export default function SceneStage({ story, sceneIndex }: Props) {
         </span>
       ))}
 
+      {/* hidden stars to find */}
+      {hidden.map((h, i) =>
+        found.includes(i) ? (
+          <span
+            key={`hid-${i}`}
+            className="burst-item z-10"
+            style={
+              {
+                left: `${h.left}%`,
+                top: `${h.top}%`,
+                fontSize: `${h.size * 1.4}rem`,
+                '--bx': '0px',
+                '--by': '-50px',
+              } as CSSProperties
+            }
+          >
+            🌟
+          </span>
+        ) : (
+          <button
+            key={`hid-${i}`}
+            onClick={() => setFound((f) => [...f, i])}
+            aria-label="A hidden star!"
+            className="anim-twinkle absolute z-10 select-none"
+            style={{
+              left: `${h.left}%`,
+              top: `${h.top}%`,
+              fontSize: `${h.size}rem`,
+              animationDelay: `${h.delay}s`,
+              animationDuration: `${h.duration}s`,
+            }}
+          >
+            ⭐
+          </button>
+        )
+      )}
+
       {/* mood effects rising around the hero */}
       {effects.map((e, i) => (
         <span
           key={`fx-${i}`}
-          className="rise-item select-none"
+          className="rise-item pointer-events-none select-none"
           style={{
             left: `${e.left}%`,
             top: `${e.top}%`,
@@ -184,17 +276,41 @@ export default function SceneStage({ story, sceneIndex }: Props) {
         </span>
       ))}
 
-      {/* characters */}
-      <div className="absolute inset-x-0 bottom-10 flex items-end justify-center gap-6 sm:gap-10">
-        <span
-          className={`${HERO_ANIM[scene.mood]} select-none text-7xl drop-shadow-[0_8px_16px_rgba(0,0,0,0.45)] sm:text-8xl`}
+      {/* characters — tap them for a happy wiggle */}
+      <div className="absolute inset-x-0 bottom-10 z-10 flex items-end justify-center gap-6 sm:gap-10">
+        <button
+          onClick={() => setPop({ who: 'hero', key: Date.now() })}
+          aria-label={`Tickle ${hero.name}`}
+          className="relative cursor-pointer select-none"
         >
-          {hero.emoji}
-        </span>
-        {showFriend && (
-          <span className="anim-float select-none text-5xl drop-shadow-[0_8px_16px_rgba(0,0,0,0.45)] sm:text-6xl">
-            {friend.emoji}
+          <span
+            className={`${HERO_ANIM[scene.mood]} block text-7xl drop-shadow-[0_8px_16px_rgba(0,0,0,0.45)] sm:text-8xl`}
+          >
+            <span
+              key={pop?.who === 'hero' ? pop.key : 'idle'}
+              className={pop?.who === 'hero' ? 'anim-pop block' : 'block'}
+            >
+              {hero.emoji}
+            </span>
           </span>
+          {pop?.who === 'hero' && <Burst key={pop.key} />}
+        </button>
+        {showFriend && (
+          <button
+            onClick={() => setPop({ who: 'friend', key: Date.now() })}
+            aria-label={`Tickle ${friend.name}`}
+            className="relative cursor-pointer select-none"
+          >
+            <span className="anim-float block text-5xl drop-shadow-[0_8px_16px_rgba(0,0,0,0.45)] sm:text-6xl">
+              <span
+                key={pop?.who === 'friend' ? pop.key : 'idle'}
+                className={pop?.who === 'friend' ? 'anim-pop block' : 'block'}
+              >
+                {friend.emoji}
+              </span>
+            </span>
+            {pop?.who === 'friend' && <Burst key={pop.key} />}
+          </button>
         )}
         {isLast && (
           <span className="sleepy-z text-3xl" style={{ left: '58%', top: '-20%' }}>

@@ -8,6 +8,7 @@ export interface Hero {
   pronoun: 'she' | 'he';
   Pronoun: 'She' | 'He';
   their: 'her' | 'his';
+  famous?: boolean; // heroes inspired by favorite shows
 }
 
 export interface Friend {
@@ -55,6 +56,16 @@ export const HEROES: Hero[] = [
   { name: 'Freddie', emoji: '🐸', kind: 'hoppy green frog', ...him },
   { name: 'Sunny', emoji: '🐿️', kind: 'busy little squirrel', ...her },
   { name: 'Pomelo', emoji: '🐼', kind: 'roly-poly panda', ...him },
+  // Famous pals — append only, so existing story ids keep their heroes.
+  { name: 'Gabby', emoji: '👧', kind: 'cheerful dollhouse girl with magical cat ears', famous: true, ...her },
+  { name: 'JJ', emoji: '👶', kind: 'happy singing toddler', famous: true, ...him },
+  { name: 'Bluey', emoji: '🐶', kind: 'playful blue puppy', famous: true, ...her },
+  { name: 'Peppa', emoji: '🐷', kind: 'cheeky little piggy', famous: true, ...her },
+  { name: 'Chase', emoji: '🐕‍🦺', kind: 'brave rescue pup', famous: true, ...him },
+  { name: 'Skye', emoji: '🐩', kind: 'flying rescue pup', famous: true, ...her },
+  { name: 'Blippi', emoji: '🕺', kind: 'silly dancing explorer', famous: true, ...him },
+  { name: 'Diana', emoji: '👸', kind: 'sparkly princess of play', famous: true, ...her },
+  { name: 'Ryan', emoji: '🧒', kind: 'toy-loving adventurer', famous: true, ...him },
 ];
 
 export const FRIENDS: Friend[] = [
@@ -70,6 +81,7 @@ export const FRIENDS: Friend[] = [
   { name: 'Misty', emoji: '🦢', kind: 'graceful swan' },
   { name: 'Chirp', emoji: '🦗', kind: 'cricket' },
   { name: 'Finn', emoji: '🐠', kind: 'shiny fish' },
+  { name: 'Pandy Paws', emoji: '🐼', kind: 'huggy toy cat-panda' },
 ];
 
 export const SETTINGS: Setting[] = [
@@ -152,6 +164,11 @@ export const SETTINGS: Setting[] = [
     id: 'space', name: 'the Dreamy Sky Garden', emoji: '🪐', sky: 'space',
     gradient: 'from-slate-950 via-indigo-950 to-violet-950',
     ambient: ['🪐', '💫', '🌟'], ground: ['☁️', '🌙', '☁️', '⭐', '☁️'],
+  },
+  {
+    id: 'dollhouse', name: 'the Magical Dollhouse', emoji: '🏠', sky: 'dusk',
+    gradient: 'from-purple-900 via-fuchsia-900 to-pink-900',
+    ambient: ['🎀', '✨', '🧸'], ground: ['🛋️', '🧸', '🪆', '🎀', '🛏️'],
   },
 ];
 

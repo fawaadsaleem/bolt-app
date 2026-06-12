@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Heart, Moon, Search, Sparkles } from 'lucide-react';
 import { CATEGORIES, getAllStories, STORY_COUNT } from '../data/stories';
 import { useFavorites } from '../useFavorites';
+import { useChildName } from '../useChildName';
 
 const PAGE_SIZE = 48;
 
@@ -20,8 +21,10 @@ export default function Library() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const [onlyFavorites, setOnlyFavorites] = useState(false);
+  const [onlyFamous, setOnlyFamous] = useState(false);
   const [visible, setVisible] = useState(PAGE_SIZE);
   const { favorites, isFavorite, toggleFavorite } = useFavorites();
+  const { name: childName, setName: setChildName } = useChildName();
 
   // Deterministically interleave so neighbouring cards show different
   // heroes and plots (53 is coprime with the story count).
@@ -34,6 +37,7 @@ export default function Library() {
     const q = search.trim().toLowerCase();
     return allStories.filter((s) => {
       if (onlyFavorites && !favorites.has(s.id)) return false;
+      if (onlyFamous && !s.hero.famous) return false;
       if (category && s.category !== category) return false;
       if (
         q &&
@@ -44,7 +48,7 @@ export default function Library() {
         return false;
       return true;
     });
-  }, [allStories, search, category, onlyFavorites, favorites]);
+  }, [allStories, search, category, onlyFavorites, onlyFamous, favorites]);
 
   const surpriseMe = () => {
     const pool = filtered.length ? filtered : allStories;
@@ -66,16 +70,35 @@ export default function Library() {
         <p className="text-lg text-purple-200">
           {STORY_COUNT} animated bedtime stories, read aloud just for you
         </p>
+        <div className="mt-3 flex items-center justify-center gap-2">
+          <label htmlFor="child-name" className="text-sm text-purple-300">
+            Tonight's listener:
+          </label>
+          <input
+            id="child-name"
+            value={childName}
+            onChange={(e) => setChildName(e.target.value)}
+            placeholder="your name ✏️"
+            maxLength={20}
+            className="w-36 rounded-full bg-white/10 px-4 py-1.5 text-center text-sm placeholder-purple-300/60 outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-purple-400"
+          />
+        </div>
       </header>
 
-      {/* surprise me */}
-      <div className="mb-6 flex justify-center">
+      {/* surprise me + learning time */}
+      <div className="mb-6 flex flex-wrap justify-center gap-4">
         <button
           onClick={surpriseMe}
           className="anim-breathe flex items-center gap-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 px-8 py-4 text-xl font-extrabold text-white shadow-lg shadow-purple-900/50 hover:from-pink-400 hover:to-purple-400"
         >
           <Sparkles size={24} /> Surprise me with a story!
         </button>
+        <Link
+          to="/learn"
+          className="flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-8 py-4 text-xl font-extrabold text-white shadow-lg shadow-teal-900/50 hover:from-emerald-400 hover:to-teal-400"
+        >
+          🎓 Learning Time!
+        </Link>
       </div>
 
       {/* search + filters */}
@@ -126,6 +149,19 @@ export default function Library() {
               {CATEGORY_EMOJI[c]} {c}
             </button>
           ))}
+          <button
+            onClick={() => {
+              setOnlyFamous((f) => !f);
+              setVisible(PAGE_SIZE);
+            }}
+            className={`rounded-full px-4 py-2 text-sm font-bold ${
+              onlyFamous
+                ? 'bg-amber-400 text-indigo-950'
+                : 'bg-white/10 hover:bg-white/20'
+            }`}
+          >
+            📺 Famous Pals
+          </button>
           <button
             onClick={() => {
               setOnlyFavorites((f) => !f);

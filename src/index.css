@@ -113,6 +113,34 @@ body {
   animation: sleepy-z 3s ease-out infinite;
 }
 
+/* happy pop when a character is tapped */
+@keyframes pop {
+  0% { transform: scale(1) rotate(0deg); }
+  35% { transform: scale(1.3) rotate(-8deg); }
+  70% { transform: scale(0.95) rotate(6deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+.anim-pop { animation: pop 0.5s ease-out; }
+
+/* gentle wrong-answer wiggle */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+.anim-shake { animation: shake 0.4s ease-in-out; }
+
+/* one-shot sparkle burst */
+@keyframes burst {
+  0% { transform: translate(0, 0) scale(0.4); opacity: 1; }
+  100% { transform: translate(var(--bx), var(--by)) scale(1.2); opacity: 0; }
+}
+.burst-item {
+  position: absolute;
+  animation: burst 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
 /* gentle text fade-in for story text */
 @keyframes text-in {
   from { opacity: 0; transform: translateY(10px); }

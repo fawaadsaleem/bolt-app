@@ -1,6 +1,8 @@
 # 🌙 Dreamy Tales — Animated Bedtime Stories
 
-320 gentle, animated bedtime stories with read-aloud narration, made for little dreamers.
+464 gentle, animated bedtime stories with read-aloud narration, plus a Learning
+Time section (colors, shapes, letters, numbers, words and math from playgroup
+to grade two), made for little dreamers.
 
 ## Run it on your computer
 
